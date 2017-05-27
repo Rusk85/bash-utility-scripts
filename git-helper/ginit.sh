@@ -6,40 +6,59 @@ set -euo pipefail
 # DEBUG
 #set -euox pipefail
 
-
-if [ "$#" -ne 2 ] ; then
-	echo -e "Usage:\n"
-	echo -e "Script requires two arguments\n"
-	echo -e "#1: Windows Logon Password\n"
-	echo -e "#2: Git Repository Name\n"
+usage()
+{
+	echo -e "This script creates a git repository with the newest VisualStudio.gitignore file downloaded from github."
+	echo -e "For downloading curl is used and needs to be installed.\n"
+	echo -e "Usage:"
+	echo -e "Script requires two arguments"
+	echo -e "#1(mandatory):	New Git Repository Name as in 'git init repo_name'"
+	echo -e "#2(optional):	Proxy of format <[protocol://][user:password@]proxyhost[:port]>"
 	exit 0;
+}
+
+if [ "$#" -gt 2 ] || [ "$#" -eq 0 ] ; then
+	usage
 fi
 
-CUR_DIR=$(pwd)
-GIT_PROXY=$HOME/toggle-git-proxy.sh
-PASSWORD=$1
-NAME_REPO=$2
-GITIGNORE_REPO=$GR/git-local/3rdPartyProjects/gitignore
-GITIGNORE_FILE=$GITIGNORE_REPO/VisualStudio.gitignore
+if [ "$#" -eq 1 ] ; then
+	if [ "$1" == "--help" ] || [ "$1" == "-h" ] ; then
+		usage
+	fi
+fi
 
+
+CURL_PROXY=""
+if [ "$#" -eq 2 ] ; then
+	CURL_PROXY=$2
+fi
+
+VS_GITIGNORE="https://raw.githubusercontent.com/github/gitignore/master/VisualStudio.gitignore"
+
+CUR_DIR=$(pwd)
+NAME_REPO=$1
+PATH_REPO=$CUR_DIR/$NAME_REPO
+CURL_OUTPUT=${PATH_REPO}/.gitignore
+
+get_gitignore()
+{
+	local curl_proxy="-x "
+	local curl_cmd="curl -o ${CURL_OUTPUT}"
+	if [ "$CURL_PROXY" != "" ] ; then
+		curl_cmd="$curl_cmd -x $CURL_PROXY"
+	fi
+	curl_cmd="$curl_cmd $VS_GITIGNORE"
+	eval $curl_cmd
+}
 
 echo -e "Initializing Git Repository...\n"
-git init $CUR_DIR/$2
+git init $CUR_DIR/$NAME_REPO
 
-echo -e "Enabling git proxy...\n"
-cd $GITIGNORE_REPO/
-sh $GIT_PROXY $1
-echo -e "Updating VisualStudio.ignore Repository from Origin...\n"
-git pull origin
-
-echo -e "Disabling git proxy...\n"
-sh $GIT_PROXY
-
-echo -e "Copying $GITIGNORE_FILE to new Git Repository '$NAME_REPO'...\n"
-cp -v $GITIGNORE_FILE $CUR_DIR/$2/.gitignore
+echo -e "Adding latest VisualStudio.gitignore to new Git Repository '$NAME_REPO'...\n"
+get_gitignore
 
 echo -e "Changing into new Git Repo and creating initial commit...\n"
-cd $CUR_DIR/$2
+cd $PATH_REPO
 git add .
 git commit -m "Initial Commit"
 
