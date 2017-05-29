@@ -2,9 +2,9 @@
 # Create Git Repository using latest official Github .gitignore for Visual Studio Projects
 
 # RELEASE
-#set -euo pipefail
+set -euo pipefail
 # DEBUG
-set -euox pipefail
+#set -euox pipefail
 
 usage()
 {
@@ -13,7 +13,8 @@ usage()
 	echo -e "Usage:"
 	echo -e "Script requires two arguments"
 	echo -e "#1(mandatory):	New Git Repository Name as in 'git init repo_name'"
-	echo -e "#2(optional):	Proxy of format <[protocol://][user:password@]proxyhost[:port]>"
+	echo -e "#2(optional):	In case a proxy is required, set required values in proxy.cfg and pass password as 2nd argument to script\n"
+	echo -e "Note: If password contains characters with special meaning in Bash such as '\$' make sure to escape these on input.\n"
 	exit 0;
 }
 
