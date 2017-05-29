@@ -2,9 +2,9 @@
 # Create Git Repository using latest official Github .gitignore for Visual Studio Projects
 
 # RELEASE
-set -euo pipefail
+#set -euo pipefail
 # DEBUG
-#set -euox pipefail
+set -euox pipefail
 
 usage()
 {
@@ -27,10 +27,12 @@ if [ "$#" -eq 1 ] ; then
 	fi
 fi
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 CURL_PROXY=""
 if [ "$#" -eq 2 ] ; then
-	CURL_PROXY=$2
+	source ${SCRIPT_DIR}/proxy.cfg
+	CURL_PROXY="${PROXY_SCHEME}${PROXY_USER}:$2@${PROXY_NAME}"
 fi
 
 VS_GITIGNORE="https://raw.githubusercontent.com/github/gitignore/master/VisualStudio.gitignore"
@@ -43,8 +45,9 @@ CURL_OUTPUT=${PATH_REPO}/.gitignore
 get_gitignore()
 {
 	local curl_proxy="-x "
-	local curl_cmd="curl -o ${CURL_OUTPUT}"
+	local curl_cmd="curl -k -o ${CURL_OUTPUT}"
 	if [ "$CURL_PROXY" != "" ] ; then
+        CURL_PROXY=$(echo $CURL_PROXY | sed -e 's/[]\/$*.^|[]/\\&/g')
 		curl_cmd="$curl_cmd -x $CURL_PROXY"
 	fi
 	curl_cmd="$curl_cmd $VS_GITIGNORE"
